@@ -50,18 +50,12 @@ class RunesController extends Controller
             'image' => ['nullable', 'image', 'max:1024'],
         ]);
 
-
         $rune = Rune::findOrFail($id);
 
-        $rune->fill([
-            'name' => $validated['name'],
-            'meaning' => $validated['meaning'],
-        ]);
+        $rune->fill($request->only(['name', 'meaning']));
 
         if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $imagePath = $image->store('images', 'public');
-            $rune->image = base64_encode(file_get_contents(storage_path("app/public/{$imagePath}")));
+            $rune->image = $this->storeImage($request->file('image'));
         }
 
         $rune->save();
@@ -72,7 +66,11 @@ class RunesController extends Controller
         ], 200);
     }
 
-
+    private function storeImage($image): string
+    {
+        $imagePath = $image->store('images', 'public');
+        return base64_encode(file_get_contents(storage_path("app/public/{$imagePath}")));
+    }
 
     public function destroy($id)
     {
