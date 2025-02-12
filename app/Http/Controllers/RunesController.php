@@ -44,33 +44,35 @@ class RunesController extends Controller
 
     public function update(Request $request, $id)
     {
-        $validated = $request->validate([
+        // Validação dos dados
+        $request->validate([
             'name' => ['required', 'string', Rule::unique('runes', 'name')->ignore($id)],
             'meaning' => ['required', 'string'],
             'image' => ['nullable', 'image', 'max:1024'],
         ]);
 
+        // Buscar a runa ou lançar erro 404
         $rune = Rune::findOrFail($id);
 
+        // Atualizar os campos de nome e significado
         $rune->fill($request->only(['name', 'meaning']));
 
+        // Processar a imagem, se enviada
         if ($request->hasFile('image')) {
-            $rune->image = $this->storeImage($request->file('image'));
+            $imagePath = $request->file('image')->store('images', 'public');
+            $rune->image = base64_encode(file_get_contents(storage_path("app/public/{$imagePath}")));
         }
 
+        // Salvar a runa no banco de dados
         $rune->save();
 
+        // Retornar resposta JSON de sucesso
         return response()->json([
             'message' => 'Rune updated successfully',
             'rune' => $rune
         ], 200);
     }
 
-    private function storeImage($image): string
-    {
-        $imagePath = $image->store('images', 'public');
-        return base64_encode(file_get_contents(storage_path("app/public/{$imagePath}")));
-    }
 
     public function destroy($id)
     {
